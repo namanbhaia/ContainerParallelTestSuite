@@ -1,4 +1,4 @@
-#! bin/bash
+#!bin/bash
 
 ## File to build all benchmark containers
 # Help Menu
@@ -17,18 +17,25 @@ clean() {
     echo "---------- Removing Docker images ----------"
         
     active_docker_images=`sudo docker images | grep -E '.*(capstone+)+.*' | awk '{print $3}'`
-    if [ ! -n "$active_docker_images" ]
+    for docker_image in $active_docker_images
+    do
+        sudo docker rmi $docker_image
+    done
+
+    sysbench_docker_image=`sudo docker images | grep -E '.*(ljishen/sysbench+)+.*' | awk '{print $3}'`
+    if [ -n "$active_docker_images" ]
     then
-        echo "No images created"
-    else
-        for docker_image in $active_docker_images
-        do
-            sudo docker rmi $docker_image
-        done
+        sudo docker rmi $sysbench_docker_image
     fi
     
-    echo "---------- Displaying all Docker images after cleanup ----------"
-    sudo docker images
+    dangling_docker_image=`sudo docker images -f "dangling=true" -q`
+    for docker_image in $dangling_docker_image
+    do
+        sudo docker rmi $docker_image
+    done
+    
+    # echo "---------- Displaying all Docker images after cleanup ----------"
+    # sudo docker images
 }
 
 while [ ! -z "$1" ]; do
@@ -93,5 +100,5 @@ while [ ! -z "$1" ]; do
 shift $(( $# > 0 ? 1 : 0 ))
 done
 
-echo "---------- Displaying all Docker images ----------"
-sudo docker images
+# echo "---------- Displaying all Docker images ----------"
+# sudo docker images

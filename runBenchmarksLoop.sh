@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 ## File to build and run all benchmark containers
 
@@ -22,13 +22,11 @@ help_menu() {
 clean() {
     # Stopping docker containers
     running_docker_containers=$(sudo docker ps -a | grep -E '.*(capstone+)+.*' | awk '{print $1}')
-    if [ ! -n "$running_docker_containers" ]; then
-        echo "---------- No Docker containers running! ----------"
-    else
-        echo "---------- Stopping Docker containers ----------"
+    if [ -n "$running_docker_containers" ]; then
+        # echo "---------- Stopping Docker containers ----------"
         for container_id in $running_docker_containers; do
-            sudo docker stop $container_id
-            sudo docker rm $container_id
+            sudo docker stop $container_id > /dev/null
+            sudo docker rm $container_id > /dev/null
         done
     fi
 
@@ -42,12 +40,17 @@ run_linpack() {
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
     x=1
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults -e LINPACK_ARRAY_SIZE=600 capstone_linpack "${arr[@]}"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults -e LINPACK_ARRAY_SIZE=600 --memory="4000m" --cpus="2" capstone_linpack "${arr[@]}"
         x=$(($x + 1))
     done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_linpack_parallel() {
@@ -62,9 +65,11 @@ run_linpack_parallel() {
         echo "Building Linpack container"
         sh ./buildContainers.sh --linpack
     fi
+    logFile="finalResults/Linpack_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_linpack $arr &
+        run_linpack $arr $logFile "$x" &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
@@ -78,12 +83,17 @@ run_noploop() {
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults capstone_noploop "${arr[@]}"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults --memory="4000m" --cpus="2" capstone_noploop "${arr[@]}"
         x=$(($x + 1))
-    done    
+    done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_noploop_parallel() {
@@ -98,9 +108,13 @@ run_noploop_parallel() {
         echo "Building Noploop container"
         sh ./buildContainers.sh --noploop
     fi
+    logFile="finalResults/Noploop_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_noploop "$arr" &
+        run_noploop $arr $logFile "$x" &
+        PID="$!"
+        PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
@@ -112,12 +126,17 @@ run_unixbench() {
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults capstone_unixbench "${arr[@]}"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults --memory="4000m" --cpus="2" capstone_unixbench "${arr[@]}"
         x=$(($x + 1))
     done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_unixbench_parallel() {
@@ -132,9 +151,13 @@ run_unixbench_parallel() {
         echo "Building Unixbench container"
         sh ./buildContainers.sh --unixbench
     fi
+    logFile="finalResults/UnixBench_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_unixbench "$arr" &
+        run_unixbench $arr $logFile "$x" &
+        PID="$!"
+        PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
@@ -149,13 +172,18 @@ run_sysbench() {
     numContainerInstances=${arr[1]}
     numRunsInContainer=${arr[2]}
     runtime=${arr[4]}
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/root/results ljishen/sysbench /root/results/output_cpu.prof --test=cpu --cpu-max-prime=20000000 --num-threads=2 --max-requests=10 run
+        sudo docker run --runtime=$runtime -v ./finalResults:/root/results --memory="4000m" --cpus="2" ljishen/sysbench /root/results/output_cpu.prof --test=cpu --cpu-max-prime=20000000 --num-threads=2 --max-requests=10 run
         mv finalResults/output_cpu.prof "finalResults/SysbenchRun_${runtime}_${numParallelRuns}_${numContainerInstances}_${numRunsInContainer}_${x}.prof"
         x=$(($x + 1))
     done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_sysbench_parallel() {
@@ -164,9 +192,13 @@ run_sysbench_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    logFile="finalResults/Sysbench_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_sysbench "$arr" &
+        run_sysbench $arr $logFile "$x" &
+        PID="$!"
+        PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
@@ -178,12 +210,17 @@ run_ycruncher() {
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults capstone_ycruncher "${arr[@]}"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults --memory="4000m" --cpus="2" capstone_ycruncher "${arr[@]}"
         x=$(($x + 1))
     done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_ycruncher_parallel() {
@@ -198,9 +235,13 @@ run_ycruncher_parallel() {
         echo "Building Y-Cruncher container"
         sh ./buildContainers.sh --ycruncher
     fi
+    logFile="finalResults/YCruncher_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_ycruncher "$arr" &
+        run_ycruncher $arr $logFile "$x" &
+        PID="$!"
+        PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
@@ -212,12 +253,17 @@ run_bonnie() {
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
+    logFile=$2
+    logEntry=$3
+    logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults capstone_bonnie "${arr[@]}"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults --memory="4000m" --cpus="2" capstone_bonnie "${arr[@]}"
         x=$(($x + 1))
     done
+    logEntry+=",$(date +%s)";
+    echo $logEntry >> $logFile
 }
 
 run_bonnie_parallel() {
@@ -232,9 +278,13 @@ run_bonnie_parallel() {
         echo "Building Bonnie++ container"
         sh ./buildContainers.sh --bonnie
     fi
+    logFile="finalResults/Bonnie_RunLog_$(date +%s).csv"
+    echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_bonnie "$arr" &
+        run_bonnie $arr $logFile "$x" &
+        PID="$!"
+        PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
