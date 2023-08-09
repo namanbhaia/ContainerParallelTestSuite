@@ -59,13 +59,15 @@ run_linpack_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    runtime=${arr[4]}
     # Check if Linpack container image exists or if rebuild is requested
     linpack_docker_images=$(sudo docker images | grep -E '.*(capstone_linpack)+.*' | awk '{print $1}')
     if [ ! -n "$linpack_docker_images" ] || [ "$rebuild" = "true" ]; then
         echo "Building Linpack container"
         sh ./buildContainers.sh --linpack
     fi
-    logFile="finalResults/Linpack_RunLog_$(date +%s).csv"
+    logFile="finalResults/Linpack_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
@@ -102,13 +104,15 @@ run_noploop_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    runtime=${arr[4]}
     # Check if Noploop container image exists or if rebuild is requested
     noploop_docker_images=$(sudo docker images | grep -E '.*(capstone_noploop)+.*' | awk '{print $1}')
     if [ ! -n "$noploop_docker_images" ] || [ "$rebuild" = "true" ]; then
         echo "Building Noploop container"
         sh ./buildContainers.sh --noploop
     fi
-    logFile="finalResults/Noploop_RunLog_$(date +%s).csv"
+    logFile="finalResults/Noploop_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
@@ -145,13 +149,15 @@ run_unixbench_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    runtime=${arr[4]}
     # Check if Unixbench container image exists or if rebuild is requested
     unixbench_docker_images=$(sudo docker images | grep -E '.*(capstone_unixbench)+.*' | awk '{print $1}')
     if [ ! -n "$unixbench_docker_images" ] || [ "$rebuild" = "true" ]; then
         echo "Building Unixbench container"
         sh ./buildContainers.sh --unixbench
     fi
-    logFile="finalResults/UnixBench_RunLog_$(date +%s).csv"
+    logFile="finalResults/UnixBench_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
@@ -173,13 +179,14 @@ run_sysbench() {
     numRunsInContainer=${arr[2]}
     runtime=${arr[4]}
     logFile=$2
+    parallelRunId=$3
     logEntry=$3
     logEntry+=",$(date +%s)";
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
         sudo docker run --runtime=$runtime -v ./finalResults:/root/results --memory="4000m" --cpus="2" ljishen/sysbench /root/results/output_cpu.prof --test=cpu --cpu-max-prime=20000000 --num-threads=2 --max-requests=10 run
-        mv finalResults/output_cpu.prof "finalResults/SysbenchRun_${runtime}_${numParallelRuns}_${numContainerInstances}_${numRunsInContainer}_${x}.prof"
+        mv finalResults/output_cpu.prof "finalResults/SysbenchRun_${runtime}_${numParallelRuns}_${numContainerInstances}_${numRunsInContainer}_${parallelRunId}.prof"
         x=$(($x + 1))
     done
     logEntry+=",$(date +%s)";
@@ -192,7 +199,9 @@ run_sysbench_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
-    logFile="finalResults/Sysbench_RunLog_$(date +%s).csv"
+    runtime=${arr[4]}
+    logFile="finalResults/Sysbench_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
@@ -229,13 +238,15 @@ run_ycruncher_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    runtime=${arr[4]}
     # Check if Y-Cruncher container image exists or if rebuild is requested
     ycruncher_docker_images=$(sudo docker images | grep -E '.*(capstone_ycruncher)+.*' | awk '{print $1}')
     if [ ! -n "$ycruncher_docker_images" ] || [ "$rebuild" = "true" ]; then
         echo "Building Y-Cruncher container"
         sh ./buildContainers.sh --ycruncher
     fi
-    logFile="finalResults/YCruncher_RunLog_$(date +%s).csv"
+    logFile="finalResults/YCruncher_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
@@ -272,13 +283,15 @@ run_bonnie_parallel() {
     arr=$1
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
+    runtime=${arr[4]}
     # Check if Bonnie++ container image exists or if rebuild is requested
     bonnie_docker_images=$(sudo docker images | grep -E '.*(capstone_bonnie)+.*' | awk '{print $1}')
     if [ ! -n "$bonnie_docker_images" ] || [ "$rebuild" = "true" ]; then
         echo "Building Bonnie++ container"
         sh ./buildContainers.sh --bonnie
     fi
-    logFile="finalResults/Bonnie_RunLog_$(date +%s).csv"
+    logFile="finalResults/Bonnie_RunLog_${runtime}_$(date +%s).csv"
+    touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
