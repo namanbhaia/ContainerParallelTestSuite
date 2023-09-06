@@ -39,13 +39,13 @@ run_linpack() {
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
-    x=1
-    logFile=$2
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
-        # At this point the container image should exist so we simply run the benchmark
+        # At this point the container image should exist so we sim+ply run the benchmark
         sudo docker run --runtime=$runtime -v ./finalResults:/finalResults -e LINPACK_ARRAY_SIZE=600 --memory="4000m" --cpus="2" capstone_linpack "${arr[@]}"
         x=$(($x + 1))
     done
@@ -66,28 +66,36 @@ run_linpack_parallel() {
         echo "Building Linpack container"
         sh ./buildContainers.sh --linpack
     fi
-    logFile="finalResults/Linpack_RunLog_${runtime}_$(date +%s).csv"
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/Linpack_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Linpack_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_linpack $arr $logFile "$x" &
+        run_linpack $arr $x &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done    
     wait
+    cp "linpack/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    cd $subFolderName
+    python3 mergeMergedCSV.py
+    cd ../..
 }
 
 run_noploop() {
     # Noploop Benchmark
-    x=1
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
-    logFile=$2
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
@@ -111,28 +119,36 @@ run_noploop_parallel() {
         echo "Building Noploop container"
         sh ./buildContainers.sh --noploop
     fi
-    logFile="finalResults/Noploop_RunLog_${runtime}_$(date +%s).csv"
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/Noploop_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Noploop_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_noploop $arr $logFile "$x" &
+        run_noploop $arr $x &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
+    cp "noploop/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    cd $subFolderName
+    python3 mergeMergedCSV.py
+    cd ../..
 }
 
 run_unixbench() {
     # Unixbench Benchmark
-    x=1
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
-    logFile=$2
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
@@ -156,37 +172,41 @@ run_unixbench_parallel() {
         echo "Building Unixbench container"
         sh ./buildContainers.sh --unixbench
     fi
-    logFile="finalResults/UnixBench_RunLog_${runtime}_$(date +%s).csv"
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/Unicbench_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Unixbench_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_unixbench $arr $logFile "$x" &
+        run_unixbench $arr $x &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
+    # cp "unixbench/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    # cd $subFolderName
+    # python3 mergeMergedCSV.py
+    # cd ../..
 }
 
 run_sysbench() {
     # Sysbench Benchmark
     #TODO: Currently does not support running the benchmark n times in each container. This is because the container image is pulled from the internet
-    x=1
     arr=$1
-    numParallelRuns=${arr[0]}
     numContainerInstances=${arr[1]}
-    numRunsInContainer=${arr[2]}
     runtime=${arr[4]}
-    logFile=$2
-    parallelRunId=$3
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
-        sudo docker run --runtime=$runtime -v ./finalResults:/root/results --memory="4000m" --cpus="2" ljishen/sysbench /root/results/output_cpu.prof --test=cpu --cpu-max-prime=20000000 --num-threads=2 --max-requests=10 run
-        mv finalResults/output_cpu.prof "finalResults/SysbenchRun_${runtime}_${numParallelRuns}_${numContainerInstances}_${numRunsInContainer}_${parallelRunId}.prof"
+        sudo docker run --runtime=$runtime -v ./finalResults:/finalResults --memory="4000m" --cpus="2" capstone_sysbench "${arr[@]}"
         x=$(($x + 1))
     done
     logEntry+=",$(date +%s)";
@@ -200,28 +220,42 @@ run_sysbench_parallel() {
     numParallelRuns=${arr[0]}
     rebuild=${arr[3]}
     runtime=${arr[4]}
-    logFile="finalResults/Sysbench_RunLog_${runtime}_$(date +%s).csv"
+    # Check if Sysbench container image exists or if rebuild is requested
+    sysbench_docker_images=$(sudo docker images | grep -E '.*(capstone_sysbench)+.*' | awk '{print $1}')
+    if [ ! -n "$sysbench_docker_images" ] || [ "$rebuild" = "true" ]; then
+        echo "Building Sysbench container"
+        sh ./buildContainers.sh --sysbench
+    fi
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/Sysbench_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Sysbench_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_sysbench $arr $logFile "$x" &
+        run_sysbench $arr $x &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
+    cp "sysbench/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    cd $subFolderName
+    python3 mergeMergedCSV.py
+    cd ../..
 }
 
 run_ycruncher() {
     # Y-Cruncher Benchmark
-    x=1
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
-    logFile=$2
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
@@ -245,28 +279,36 @@ run_ycruncher_parallel() {
         echo "Building Y-Cruncher container"
         sh ./buildContainers.sh --ycruncher
     fi
-    logFile="finalResults/YCruncher_RunLog_${runtime}_$(date +%s).csv"
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/YCruncher_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Ycruncher_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_ycruncher $arr $logFile "$x" &
+        run_ycruncher $arr $xs &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
+    cp "ycruncher/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    cd $subFolderName
+    python3 mergeMergedCSV.py
+    cd ../..
 }
 
 run_bonnie() {
     # Bonnie++ Benchmark
-    x=1
     arr=$1
     numContainerInstances=${arr[1]}
     runtime=${arr[4]}
-    logFile=$2
-    logEntry=$3
+    logFile=${arr[6]}
+    logEntry=$2
     logEntry+=",$(date +%s)";
+    x=1
     while [ $x -le $numContainerInstances ]; do
         # echo "Running serial container: $x"
         # At this point the container image should exist so we simply run the benchmark
@@ -290,17 +332,25 @@ run_bonnie_parallel() {
         echo "Building Bonnie++ container"
         sh ./buildContainers.sh --bonnie
     fi
-    logFile="finalResults/Bonnie_RunLog_${runtime}_$(date +%s).csv"
+    currTimeStamp=$(date +%s)
+    subFolderName="finalResults/Bonnie_${currTimeStamp}_${runtime}_${numParallelRuns}_${arr[1]}_${arr[2]}"
+    mkdir $subFolderName
+    logFile="${subFolderName}/Bonnie_RunLog.txt"
+    arr+=($subFolderName $logFile)
     touch $logFile
     echo "ParallelBranch,StartTime,EndTime" > $logFile
     while [ $x -le $numParallelRuns ]; do
         echo "Running in parallel branch: $x"
-        run_bonnie $arr $logFile "$x" &
+        run_bonnie $arr $x &
         PID="$!"
         PID_LIST+="$PID "
         x=$(($x + 1))
     done
     wait
+    # cp "bonnie/mergeMergedCSV.py" "${subFolderName}/mergeMergedCSV.py"
+    # cd $subFolderName
+    # python3 mergeMergedCSV.py
+    # cd ../..
 }
 
 run_cachebench() {

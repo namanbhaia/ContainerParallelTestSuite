@@ -1,11 +1,5 @@
 #!/bin/bash
-# echo "Container for test running"
-cd byte-unixbench/UnixBench
 mkdir results
-
-export UB_OUTPUT_CSV="true"
-make
-
 arr=("$@")
 numParallelRuns=${arr[0]}
 numContainerInstances=${arr[1]}
@@ -16,10 +10,19 @@ x=1
 while [ $x -le $numRunsInContainer ]
 do
 	# echo "In same container, running test: $x"
-	./Run
+	filename="results/SysbenchRun_$(date +%s)_${runtime}_${numParallelRuns}_${numContainerInstances}_${numRunsInContainer}_${parallelRunId}.prof"
+	touch filename
+	sysbench cpu --cpu-max-prime=20000000 --threads=2 --events=10 run > $filename
 	x=$(( $x + 1 ))
 done
-
-cd ../..
-# echo "Tests runs complete!"
+cd ..
 python3 mergeCSV.py "$numParallelRuns" "$numContainerInstances" "$numRunsInContainer" "$runtime" "$resultsSubFolder"
+# echo "Tests runs complete!"
+# while :
+# do
+#  if [ -f "/stop" ]
+#  then
+#    exit
+#  fi
+#  sleep 1
+# done

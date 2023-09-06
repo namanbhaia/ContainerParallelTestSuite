@@ -44,10 +44,11 @@ joinedCSV.rename(
 
 dateTime = datetime.datetime.now();
 dateTimeStr = dateTime.strftime("%d-%m-%Y_%H-%M-%S")
-filename = os.getcwd() + "finalResults/LinpackRun_" + dateTimeStr + "_" + sys.argv[4] + "_" + sys.argv[1] + "_" + sys.argv[2] + "_" + sys.argv[3];
+filename = os.getcwd() + sys.argv[5] + "/LinpackRun_" + dateTimeStr + "_" + sys.argv[4] + "_" + sys.argv[1] + "_" + sys.argv[2] + "_" + sys.argv[3];
 name = filename + ".csv";
+counter = 1;
 while os.path.isfile(name):
-	filename = filename + str(1);
-	name = filename + ".csv";
+	name = filename + "(" + str(counter) + ").csv";
+	counter = counter + 1;
 joinedCSV.to_csv(name, index=False)
 # print("Concatenated file is stored at: ", name);

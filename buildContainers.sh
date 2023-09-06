@@ -9,6 +9,7 @@ help_menu() {
     echo "-linpack or -lp to build linpack benchmark"
     echo "-noploop or -np to build noploop benchmark"
     echo "-cachebench or -cb to build cachebench benchmark"
+    echo "-sysbench or -sb to build sysbench benchmark"
     exit
 }
 
@@ -91,6 +92,14 @@ while [ ! -z "$1" ]; do
         echo "---------- Building Bonnie++ container ----------"
 		cd bonnie
 		sudo docker build -t capstone_bonnie ./
+		cd ..
+         ;;
+    --sysbench|-sb)
+	    # Sysbench Benchmark
+        shift
+        echo "---------- Building Sysbench container ----------"
+		cd sysbench
+		sudo docker build -t capstone_sysbench ./
 		cd ..
          ;;
      *)
