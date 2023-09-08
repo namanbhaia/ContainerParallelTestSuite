@@ -1,12 +1,13 @@
 # benchmarkingScript
 Script to run benchmarks on various container engines. Currently, the script supports running the following benchmarks:
-1. Bonnie++
+1. Bonnie++*
 2. Linpack
 3. Noploop
-4. Sysbench
-5. Unixbench
+4. Sysbench prime number
+5. Sysbench memory
+5. Unixbench*
 6. Y-Cruncher
 
 Limitations:
-1. No support running different container enginees.
-2. No provision to merge certain benchmark results.
+1. Automate parsing Bonnie++ and Unixbench output.
+2. Implement Cachebench execution

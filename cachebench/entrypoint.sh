@@ -1,7 +1,6 @@
 #!/bin/bash
 
-echo "Container for test running"
-echo "Building container for llcbench"
+# echo "Building container for llcbench"
 tar -xf llcbench.tar.gz
 cd llcbench
 echo "--------------------- Cleaning all resources"
