@@ -479,6 +479,11 @@ while getopts ":ert:l:n:s:c:u:y:b:" option; do
         arr=($numRuns $rebuild $runtime)
         run_bonnie_parallel "$arr"
         ;;
+    a)
+        numRuns="$OPTARG"
+        arr=($numRuns $rebuild $runtime)
+        run_stream_parallel "$arr"
+        ;;
     c)
         numRuns="$OPTARG"
         x=1
