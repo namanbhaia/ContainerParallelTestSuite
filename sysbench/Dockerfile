@@ -5,7 +5,8 @@ RUN apt-get install -y python3
 RUN apt-get install -y pip
 RUN pip install pandas
 COPY entrypoint.sh /
-COPY mergeCSV.py /
+COPY mergeCSVCPU.py /
+COPY mergeCSVMemory.py /
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["1", "1", "1", "runc"]
 
