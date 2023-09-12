@@ -434,7 +434,7 @@ clean
 rebuild="false"
 runtime="runc"
 
-while getopts ":ert:l:n:s:c:u:y:b:" option; do
+while getopts ":ert:l:n:s:c:u:y:b:a:" option; do
     case $option in
     e)
         echo "Cleaning container images and instances"

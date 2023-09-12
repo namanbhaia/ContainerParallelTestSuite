@@ -4,7 +4,7 @@ import datetime
 import os
 import sys
 
-csvPath = r'result/*.csv'
+csvPath = r'results/*.csv'
 # List to store files
 csvFiles = glob.glob(csvPath)
 # print("The result files being merged are: \n", "\n".join(csvFiles))
