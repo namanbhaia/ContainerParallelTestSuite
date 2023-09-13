@@ -14,10 +14,12 @@ help_menu() {
     echo "-u to run unixbench benchmark"
     echo "-y to run y-cruncher benchmark"
     echo "-b to run bonnie++ benchmark"
-    echo "-c to run cachebench benchmark"
-    echo "-s to run sysbench prime number generation benchmark"
+    # echo "-c to run cachebench benchmark"
+    echo "-s to run sysbench benchmark"
     echo "After choosing benchamark to run, please provide repetitions as 'x y z'"
     echo "Here, x is number of parallel runs, y is number of containers in serial, and z is number of runs in each container"
+    echo "The exception is sysbench where an extra argument is required as 'x y z isCpu'. isCPU is a boolean value such that 'true' will run CPU tests"
+    echo "and false will run memory tests"
     exit
 }
 

@@ -15,7 +15,7 @@ do
 	touch filename
 	if  [ "$isCpuTest" = "true" ]
 	then
-		sysbench cpu --cpu-max-prime=20000000 --threads=2 --events=10 run > $filename
+		sysbench cpu --cpu-max-prime=20000000 --threads=2 --events=10 --time=0 run > $filename
 	else
 		sysbench memory run > $filename
 	fi
